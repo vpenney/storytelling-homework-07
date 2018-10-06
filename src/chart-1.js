@@ -40,7 +40,10 @@ var colorScale = d3
   ])
 
 // Create a d3.line function that uses your scales
-var line = d3.line().y(d => yPositionScale(d.price))
+var line = d3
+  .line()
+  .y(d => yPositionScale(d.price))
+  .x(d => xPositionScale(d.datetime))
 
 // Read in your housing price data
 d3.csv(require('./housing-prices.csv'))
@@ -76,16 +79,13 @@ function ready(datapoints) {
   // Define domain for xPositionScale
   xPositionScale.domain(d3.extent(dates))
 
-  // Assign datetime to x-axis data in line function
-  line.x(d => xPositionScale(d.datetime))
-
   // Group your data together
   var nested = d3
     .nest()
     .key(d => d.region)
     .entries(datapoints)
 
-  console.log(nested)
+  // console.log(nested)
 
   // Draw your lines
   svg
@@ -177,34 +177,21 @@ function ready(datapoints) {
 
   // Add the shaded rectangle
   svg
-    .selectAll('rect')
-    .data(nested)
-    .enter()
     .append('rect')
-    // .attr('x', 300)
     // Use July 17 datetime for x position of text
-    .attr('x', function(d) {
-      var decData = d.values.find(function(d) {
-        return d.month === 'December-16'
-      })
-      return xPositionScale(decData.datetime)
-    })
+    .attr('x', xPositionScale(parseTime('December-16')))
     .attr('y', 0)
-    .attr('width', function(d) {
-      var decData = d.values.find(function(d) {
-        return d.month === 'December-16'
-      })
-      var febData = d.values.find(function(d) {
-        return d.month === 'February-17'
-      })
-      return xPositionScale(febData.datetime) - xPositionScale(decData.datetime)
-    })
+    .attr(
+      'width',
+      xPositionScale(parseTime('February-17')) -
+        xPositionScale(parseTime('December-16'))
+    )
     .attr('height', height)
     .attr('fill', '#f0f0f0')
     .lower()
 
   // Add your axes
-  var xAxis = d3.axisBottom(xPositionScale).tickFormat(d3.timeFormat('%b-%y'))
+  var xAxis = d3.axisBottom(xPositionScale).tickFormat(d3.timeFormat('%b %y'))
   svg
     .append('g')
     .attr('class', 'axis x-axis')
@@ -216,4 +203,14 @@ function ready(datapoints) {
     .append('g')
     .attr('class', 'axis y-axis')
     .call(yAxis)
+}
+
+export {
+  xPositionScale,
+  yPositionScale,
+  colorScale,
+  line,
+  width,
+  height,
+  parseTime
 }
